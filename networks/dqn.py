@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import tensorflow as tf
+#from tensorflow.python.ops import init_ops
 
 import util
 
@@ -21,6 +22,8 @@ class Network(object):
       self.build_actor_critic_heads(inputs, conv_output, reward_scaling)
     else:
       self.build_action_value_heads(inputs, conv_output, reward_scaling)
+      if config.e_network or config.LLL:
+        self.build_action_evalue_heads(inputs, conv_output, reward_scaling)
 
     if self.using_ensemble:
       self.build_ensemble()
@@ -84,9 +87,34 @@ class Network(object):
     self.greedy_action = tf.squeeze(
         greedy_action, axis=2, name='greedy_action')
 
+  def build_action_evalue_heads(self, inputs, conv_output, reward_scaling):
+    self.eheads = [
+        ActionEValueHead('Ehead%d' % i, inputs, conv_output, reward_scaling,
+                        self.config) for i in range(self.num_heads)
+    ]
+
+    self.action_e_values = tf.stack(
+        [head.action_values for head in self.eheads],
+        axis=1,
+        name='action_e_values')
+    self.activation_summary(self.action_e_values)
+
+    self.taken_action_e_value = self.action_e_value(
+        inputs.action, name='taken_action_e_value')
+
+    e_value, e_greedy_action = tf.nn.top_k(self.action_e_values, k=1)
+    self.e_value = tf.squeeze(e_value, axis=2, name='e_value')
+    self.e_greedy_action = tf.squeeze(
+        e_greedy_action, axis=2, name='E_greedy_action')
+
+
   def action_value(self, action, name='action_value'):
     with tf.name_scope(name):
       return self.choose_from_actions(self.action_values, action)
+
+  def action_e_value(self, action, name='action_e_value'):
+    with tf.name_scope(name):
+      return self.choose_from_actions(self.action_e_values, action)
 
   def build_actor_critic_heads(self, inputs, conv_output, reward_scaling):
     self.heads = [
@@ -173,10 +201,42 @@ class ActionValueHead(object):
           hidden_actions, config.num_actions, name='actions')
 
       return value + actions - tf.reduce_mean(actions, axis=1, keep_dims=True)
-
+    
     else:
       hidden = tf.layers.dense(conv_outputs, 256, tf.nn.relu, name='hidden')
       return tf.layers.dense(hidden, config.num_actions, name='action_value')
+
+class ActionEValueHead(object):
+  def __init__(self, name, inputs, conv_outputs, reward_scaling, config):
+    with tf.variable_scope(name):
+      action_values = self.action_value_layer(conv_outputs, config)
+      action_values = reward_scaling.unnormalize_output(action_values)
+      value, greedy_action = tf.nn.top_k(action_values, k=1)
+
+      self.action_values = tf.multiply(
+          inputs.alive, action_values, name='action_values')
+      self.value = tf.squeeze(inputs.alive * value, axis=1, name='value')
+      self.greedy_action = tf.squeeze(
+          greedy_action, axis=1, name='greedy_action')
+
+  def action_value_layer(self, conv_outputs, config):
+    # if config.edueling:
+    #   hidden_value = tf.layers.dense(
+    #       conv_outputs, 256, tf.nn.relu, name='hidden_value')
+    #   value = tf.layers.dense(hidden_value, 1, name='value')
+
+    #   hidden_actions = tf.layers.dense(
+    #       conv_outputs, 256, tf.nn.relu, name='hidden_actions')
+    #   actions = tf.layers.dense(
+    #       hidden_actions, config.num_actions, name='actions')
+
+    #   return value + actions - tf.reduce_mean(actions, axis=1, keep_dims=True)
+
+
+    hidden = tf.layers.dense(conv_outputs, 256, tf.nn.relu, name='hidden')
+    return tf.layers.dense(hidden, config.num_actions, tf.nn.sigmoid, kernel_initializer=tf.constant_initializer(0.0) ,name='action_value')
+
+
 
 
 class ActorCriticHead(object):

@@ -1,4 +1,5 @@
 import numpy as np
+# import tensorflow as tf
 
 from atari import Atari
 from agents.exploration_bonus import ExplorationBonus
@@ -23,7 +24,14 @@ class Agent(object):
 
   def action(self, session, step, observation):
     # Epsilon greedy exploration/exploitation even for bootstrapped DQN
-    if np.random.rand() < self.epsilon(step):
+    if self.config.LLL:
+      [e_vals, vals] = session.run(
+          [self.policy_network.action_values, self.policy_network.action_e_values],
+          {self.policy_network.inputs.observations: [observation],
+           self.policy_network.inputs.alive: np.reshape([1],(1,1))})
+      return np.argmax(vals - self.epsilon(step) * np.log(-np.log(e_vals)))
+
+    elif np.random.rand() < self.epsilon(step):
       return self.atari.sample_action()
     else:
       [action] = session.run(
@@ -47,9 +55,22 @@ class Agent(object):
 
     return epsilon
 
-  def take_action(self, action):
+  def take_action(self, action, observation=None, session=None):
+
+    if self.config.e_exploration_bonus:
+      if session is None:
+        e_value = 0.5
+      else:
+        [e_value] = session.run(
+            self.policy_network.taken_action_e_value,
+            {self.policy_network.inputs.observations: [observation],
+             self.policy_network.inputs.action: np.reshape([action],(1,1)),
+             self.policy_network.inputs.alive: np.reshape([1],(1,1))})
+    else:
+      e_value = 0
+
     observation, reward, done = self.atari.step(action)
-    training_reward = self.process_reward(reward, observation)
+    training_reward = self.process_reward(reward, observation, e_value)
 
     # Store action, reward and done with the next observation
     self.replay_memory.store_transition(action, training_reward, done,
@@ -57,9 +78,14 @@ class Agent(object):
 
     return observation, reward, done
 
-  def process_reward(self, reward, frames):
+  def process_reward(self, reward, frames, e_value):
     if self.config.exploration_bonus:
       reward += self.exploration_bonus.bonus(frames)
+
+    if self.config.e_exploration_bonus:
+      counter = -np.log(e_value)
+      exploration_bonus = self.config.exploration_beta / ((counter + 0.01)**0.5)
+      reward += exploration_bonus
 
     if self.config.reward_clipping:
       reward = max(-self.config.reward_clipping,

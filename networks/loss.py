@@ -15,7 +15,10 @@ class Losses(object):
     elif self.config.actor_critic:
       priorities, loss = self.actor_critic_loss()
     else:
-      priorities, loss = self.one_step_loss()
+      if self.config.e_network:
+        priorities, loss = self.one_step_e_loss()
+      else:
+        priorities, loss = self.one_step_loss()
 
     # Priorities
     self.priorities = tf.identity(priorities, name='priorities')
@@ -69,9 +72,26 @@ class Losses(object):
 
       return error, loss
 
+  def one_step_e_loss(self):
+    q_err, q_loss = self.one_step_loss()
+
+    with tf.name_scope('one_step_e_loss'):
+      taken_action_e_value = self.policy_network[0].taken_action_e_value
+      target_e_value = 0 + self.e_discount * self.e_value(1)
+      error = target_e_value - taken_action_e_value
+      e_loss = tf.square(error)
+
+      loss = q_loss + e_loss
+
+      return loss, loss
+
   def one_step_target(self):
     with tf.name_scope('one_step_target'):
       return self.reward[0] + self.discount * self.value(1)
+
+  def e_value(self, t):
+    # always SARSA
+    return self.target_network[t].taken_action_e_value
 
   def value(self, t):
     if self.config.double_q:
@@ -200,6 +220,7 @@ class Losses(object):
     inputs = factory.inputs
 
     self.discount = config.discount_rate
+    self.e_discount = config.e_discount_rate
     self.discounts = ArraySyntax(lambda t: self.discount**t)
     self.global_step = tf.to_float(inputs.global_step)
     self.replay_count = tf.to_float(inputs.replay_count)

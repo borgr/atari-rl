@@ -67,7 +67,7 @@ class Trainer(object):
       while not done:
         self.reset_target_network(session, step)
         action = agent.action(session, step, observation)
-        observation, _, done = agent.take_action(action)
+        observation, _, done = agent.take_action(action, observation, session)
         step += 1
         steps_until_train -= 1
         if done or (steps_until_train == 0):

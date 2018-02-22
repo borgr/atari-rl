@@ -19,6 +19,10 @@ class ExplorationBonus(object):
     # Calculate pseudo count
     prob = self.update_density_model(frame)
     recoding_prob = self.density_model_probability(frame)
+
+    if recoding_prob - prob == 0:
+      return 0
+
     pseudo_count = prob * (1 - recoding_prob) / (recoding_prob - prob)
     if pseudo_count < 0:
       pseudo_count = 0  # Occasionally happens at start of training

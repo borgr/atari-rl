@@ -77,7 +77,9 @@ class Atari(object):
     frame = cv2.resize(frame, self.input_shape)
 
     # Convert to greyscale
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    ## HACK -- rollback to previous version from git ##
+    # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) #commented out by Lior
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
 
     return frame
 
@@ -93,11 +95,18 @@ class Atari(object):
 
   @classmethod
   def create_env(cls, config):
-    return FastAtariEnv(
+    return AtariEnv(
         game=config.game,
         obs_type='image',
         frameskip=config.frameskip,
         repeat_action_probability=config.repeat_action_probability)
+    # return FastAtariEnv(
+    #     game=config.game,
+    #     obs_type='image',
+    #     frameskip=config.frameskip,
+    #     repeat_action_probability=config.repeat_action_probability)
+
+    # This is also part of the hacking: roll-back to the previous version
 
   @classmethod
   def num_actions(cls, config):

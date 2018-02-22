@@ -15,6 +15,16 @@ conda install -y h5py numpy
 pip install tensorflow
 pip install 'gym[atari]'
 ```
+
+with without pip
+```
+virtualenv --system-site-packages -p python3 envName
+pip install opencv-python
+pip install h5py
+pip install 'gym[atari]'
+pip install numpy
+pip install tensorflow
+```
 Python 2.7 is also supported
 
 ## Usage

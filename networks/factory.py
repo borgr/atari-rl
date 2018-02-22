@@ -14,10 +14,14 @@ class NetworkFactory(object):
     self.inputs = inputs.Inputs(config)
     self.policy_nets = {}
     self.target_nets = {}
+    # self.e_nets = {}
     self.summary = util.Summary(config)
 
     with tf.variable_scope('policy_variables') as self.policy_scope:
       pass
+
+    # with tf.variable_scope('evalue_variables') as self.evalue_scope:
+    #   pass
 
     with tf.variable_scope('target_variables') as self.target_scope:
       pass
@@ -39,6 +43,21 @@ class NetworkFactory(object):
                 write_summaries=(t == 0))
 
     return self.policy_nets[t]
+
+  # def e_network(self, t=0):
+  #   if t not in self.e_nets:
+  #     reuse = len(self.e_nets) > 0
+  #     with tf.variable_scope(self.evalue_scope, reuse=reuse) as scope:
+  #       with tf.name_scope(self.network_scope):
+  #         with tf.name_scope(util.format_offset('evalue', t)):
+  #           self.e_nets[t] = dqn.Network(
+  #               variable_scope=scope,
+  #               inputs=self.inputs.offset_input(t),
+  #               reward_scaling=self.reward_scaling,
+  #               config=self.config,
+  #               write_summaries=(t == 0))
+
+  #   return self.e_nets[t]
 
   def target_network(self, t=0):
     if t not in self.target_nets:

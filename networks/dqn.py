@@ -124,6 +124,10 @@ class Network(object):
 
     self.value = tf.stack(
         [head.value for head in self.heads], axis=1, name='value')
+
+    self.evalue = tf.stack(
+        [head.evalue for head in self.heads], axis=1, name='evalue')
+
     self.greedy_action = tf.stack(
         [head.greedy_action for head in self.heads],
         axis=1,
@@ -249,6 +253,12 @@ class ActorCriticHead(object):
           inputs.alive * reward_scaling.unnormalize_output(value),
           axis=1,
           name='value')
+
+      evalue = -1.*tf.layers.dense(hidden, 1, activation=tf.nn.sigmoid, kernel_initializer=tf.constant_initializer(0.0))
+      self.evalue = tf.squeeze(
+          inputs.alive * evalue,
+          axis=1,
+          name='evalue')
 
       actions = tf.layers.dense(hidden, config.num_actions, name='actions')
       self.policy = tf.nn.softmax(actions, name='policy')

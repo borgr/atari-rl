@@ -93,3 +93,5 @@ checkpoints/
 runs/
 *.prof
 debug.sh
+logs/
+run_atari.sh

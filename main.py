@@ -11,12 +11,12 @@ flags = tf.app.flags
 # Environment
 flags.DEFINE_string('game', 'SpaceInvaders',
                     'The Arcade Learning Environment game to play')
-flags.DEFINE_string('frameskip', 4, 'Number of frames to repeat actions for. '
+flags.DEFINE_string('frameskip', "4", 'Number of frames to repeat actions for. '
                     'Can be int or tuple with min and max+1')
 flags.DEFINE_float(
     'repeat_action_probability', 0.25,
     'Probability of ignoring the agent action and repeat last action')
-flags.DEFINE_string('input_shape', (84, 84), 'Rescale input to this shape')
+flags.DEFINE_string('input_shape', "(84, 84)", 'Rescale input to this shape')
 flags.DEFINE_integer('input_frames', 4, 'Number of frames to input')
 flags.DEFINE_integer(
     'max_noops', 30,
@@ -64,7 +64,7 @@ flags.DEFINE_bool('exploration_bonus', False,
                   'Enable pseudo-count based exploration bonus')
 flags.DEFINE_float('exploration_beta', 0.05,
                    'Value to scale the exploration bonus by')
-flags.DEFINE_string('exploration_frame_shape', (42, 42),
+flags.DEFINE_string('exploration_frame_shape', "(42, 42)",
                     'Shape of frame to use with CTS in exploration bonus')
 
 # Training

@@ -2,7 +2,10 @@ import cv2
 import math
 import numpy as np
 
-from .cts.model import CTS
+import sys
+import os
+sys.path.append(os.path.dirname(__file__)+"/../third-party/cts/python/")
+from cts.model import CTS
 import util
 
 

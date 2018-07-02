@@ -13,7 +13,10 @@ class Losses(object):
     if self.config.n_step:
       priorities, loss = self.n_step_loss()
     elif self.config.actor_critic:
-      priorities, loss = self.actor_critic_loss()
+      if self.config.e_network:
+        priorities, loss = self.actor_critic_e_loss()
+      else:
+        priorities, loss = self.actor_critic_loss()
     else:
       if self.config.e_network:
         priorities, loss = self.one_step_e_loss()
@@ -207,6 +210,30 @@ class Losses(object):
       value_loss += tf.square(td_error)
 
     loss = policy_loss + value_loss
+    return loss, loss
+
+  def actor_critic_e_loss(self):
+    n = self.config.train_period
+    entropy_beta = self.config.entropy_beta
+
+    policy_loss, value_loss, evalue_loss = 0, 0, 0
+    reward = self.policy_network[n].value
+
+    for i in range(n - 1, -1, -1):
+      policy_network = self.policy_network[i]
+
+      reward = self.reward[i] + self.discount * reward
+      value = policy_network.value
+      evalue = policy_network.evalue
+      advantage = reward - value - evalue
+      log_policy = policy_network.log_policy(self.action[i])
+
+      policy_loss += (log_policy * tf.stop_gradient(advantage) + entropy_beta *
+                      policy_network.entropy)
+      value_loss += tf.square(reward - value)
+      evalue_loss += tf.square(0 - evalue)
+
+    loss = policy_loss + value_loss + evalue_loss
     return loss, loss
 
   def setup_dsl(self, factory, config):

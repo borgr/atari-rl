@@ -218,20 +218,21 @@ class Losses(object):
 
     policy_loss, value_loss, evalue_loss = 0, 0, 0
     reward = self.policy_network[n].value
+    ereward = self.policy_network[n].evalue
 
     for i in range(n - 1, -1, -1):
       policy_network = self.policy_network[i]
-
       reward = self.reward[i] + self.discount * reward
+      ereward = 0 + self.e_discount * ereward
       value = policy_network.value
       evalue = policy_network.evalue
-      advantage = reward - value - evalue
+      advantage = reward - value + self.config.e_val_importance * (ereward - evalue)
       log_policy = policy_network.log_policy(self.action[i])
 
       policy_loss += (log_policy * tf.stop_gradient(advantage) + entropy_beta *
                       policy_network.entropy)
       value_loss += tf.square(reward - value)
-      evalue_loss += tf.square(0 - evalue)
+      evalue_loss += tf.square(ereward - evalue)
 
     loss = policy_loss + value_loss + evalue_loss
     return loss, loss

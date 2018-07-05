@@ -121,7 +121,7 @@ flags.DEFINE_bool('LLL', False, 'Explore with LLL rule')
 flags.DEFINE_bool('e_network', False, 'Build and train E-network (stream)')
 flags.DEFINE_bool('e_exploration_bonus', False, 'Use E-values to augment reward (exploration bonus)')
 flags.DEFINE_float('e_discount_rate', 0.99, 'Exploration discount factor')
-
+flags.DEFINE_float('e_val_importance', 1, 'how important it the exploration loss')
 def main(_):
   config = create_config()
   trainer = Trainer(config)

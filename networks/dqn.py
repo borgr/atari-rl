@@ -260,6 +260,8 @@ class ActorCriticHead(object):
           axis=1,
           name='evalue')
 
+      #self.taken_action_e_value = 
+
       actions = tf.layers.dense(hidden, config.num_actions, name='actions')
       self.policy = tf.nn.softmax(actions, name='policy')
       self.log_policy = tf.nn.log_softmax(actions, name='log_policy')

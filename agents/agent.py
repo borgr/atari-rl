@@ -55,21 +55,31 @@ class Agent(object):
 
     return epsilon
 
-  def take_action(self, action, observation=None, session=None):
+  def take_action(self, action, last_observation=None, session=None):
+
+
+    observation, reward, done = self.atari.step(action)
 
     if self.config.e_exploration_bonus:
       if session is None:
         e_value = 0.5
+
+      elif self.config.actor_critic:
+        [e_value] = session.run(
+            self.policy_network.evalue,
+            {self.policy_network.inputs.observations: [observation],
+             self.policy_network.inputs.alive: np.reshape([1],(1,1))})
+        e_value = e_value*-1
+
       else:
         [e_value] = session.run(
             self.policy_network.taken_action_e_value,
-            {self.policy_network.inputs.observations: [observation],
+            {self.policy_network.inputs.observations: [last_observation],
              self.policy_network.inputs.action: np.reshape([action],(1,1)),
              self.policy_network.inputs.alive: np.reshape([1],(1,1))})
     else:
       e_value = 0
 
-    observation, reward, done = self.atari.step(action)
     training_reward = self.process_reward(reward, observation, e_value)
 
     # Store action, reward and done with the next observation
@@ -83,9 +93,9 @@ class Agent(object):
       reward += self.exploration_bonus.bonus(frames)
 
     if self.config.e_exploration_bonus:
-      counter = -np.log(e_value)
-      exploration_bonus = self.config.exploration_beta / ((counter + 0.01)**0.5)
-      reward += exploration_bonus
+        counter = -np.log(e_value)
+        exploration_bonus = self.config.exploration_beta / ((counter + 0.01)**0.5)
+        reward += exploration_bonus
 
     if self.config.reward_clipping:
       reward = max(-self.config.reward_clipping,

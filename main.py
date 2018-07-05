@@ -22,6 +22,10 @@ flags.DEFINE_integer(
     'max_noops', 30,
     'Maximum number of noop actions to perform at start of episode')
 
+flags.DEFINE_integer(
+    'num_actions', 16,
+    'Number of actions') # just a fix for bug 'unknown command line flag'
+
 # Agent
 flags.DEFINE_bool('double_q', False, 'Enable Double Q-Learning')
 flags.DEFINE_bool('sarsa', False, 'Enable SARSA')
@@ -74,6 +78,10 @@ flags.DEFINE_integer(
     'target_network_update_period', 10000,
     'The number of parameter updates before the target network is updated')
 flags.DEFINE_string('async', None, 'Async algorithm [one_step|n_step|a3c]')
+
+flags.DEFINE_string('n_step', None, 'Async algorithm [one_step|n_step|a3c]') #same bug
+flags.DEFINE_string('actor_critic', None, 'Async algorithm [one_step|n_step|a3c]') #same bug
+
 flags.DEFINE_float('entropy_beta', 0.01, 'Entropy regularization weight')
 flags.DEFINE_integer(
     'num_threads', 16,
